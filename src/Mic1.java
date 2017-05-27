@@ -3,6 +3,7 @@ import Elementos.*;
 import Registradores.*;
 import java.io.FileInputStream;
 import java.io.InputStream;
+import java.util.Scanner;
 
 public class Mic1 {
     private final String microprog = "C:\\Users\\Eduardo\\Documents\\Estudo Arquitetura\\Trabalho Arquitetura - NetBeans\\src\\Arquivos\\microprog.rom";
@@ -11,6 +12,7 @@ public class Mic1 {
     // ATRIBUTOS DA MIC1:
     private long[] armazenamentoControle; //Aqui armazenaremos o microprog.rom;
     private byte[] memoriaPrincipal;  //Aqui armazenaremos o arquivo binário prog.exe (nossa RAM);
+    private byte[] memoriaIntermediaria;
 
     // Ula:
     private final Ula ula;
@@ -51,8 +53,8 @@ public class Mic1 {
         readRom(); // Função que ler o arquivo microprog.rom e o coloca no atributo armazenamentoControle;
 
         // ** Inicializando a memória principal:
-        memoriaPrincipal = new byte[62];
-        readExe(exe); // Função que ler o arquivo prog.exe e o coloca no atributo memoriaPrincipal;
+        memoriaPrincipal = new byte[66000];
+        readExe2(exe); // Função que ler o arquivo prog.exe e o coloca no atributo memoriaPrincipal;
 
         // ** Inicializando os barramentos:
         barramentoA = new Barramento();
@@ -95,6 +97,7 @@ public class Mic1 {
     public void ciclo() {
         System.out.println("\nCICLO " + contadorCiclo + " ---------------------------------------------------------------------" +
                     "-------------------------------------------------------------------------------------------------------");
+        
         //1º: Carregar o MPC com o valor X (0);
         //    Carregar o MPC quer dizer a próxima microinstrução; 
         //    Mpc por padrão é inicializado com zero;
@@ -107,7 +110,7 @@ public class Mic1 {
         //2º: Após, pegar a microinstrução endereçada em MPC e joga para a MIR. Na MIR, decodificamos a microinstrução.
         mir.setValor(armazenamentoControle[ mpc.getValorInt()]);
 
-        System.out.print("\n|MIR|: " + mir.getValor() + " (" + mir.getValorLong() + ")");
+        System.out.print("|||M I R|||: " + mir.getValor() + " (" + mir.getValorLong() + ")");
         //Quebrando a microinstrução alocada em MIR:
         String addr, jam, controleUla, c, mem, microInstrucao, b;
         microInstrucao = mir.getValor();
@@ -127,7 +130,7 @@ public class Mic1 {
         carregarBarramentoB(decode4x16.decodificar(b));
         carregarBarramentoA();
 
-        System.out.println("\nVALORES CARREGADOS NOS BARRAMENTOS: Barramento A = " + barramentoA.getValor() + "\t- Barramento B = " + barramentoB.getValor());
+        System.out.println("|||VALORES CARREGADOS NOS BARRAMENTOS|||: Barramento A = " + barramentoA.getValor() + "\t- Barramento B = " + barramentoB.getValor());
 
         //4º: Fazer a operação Aritmética na ULA a partir do valor dos Barramentos A e B e os bits de controle:
         ula.executar(controleUla);
@@ -151,7 +154,9 @@ public class Mic1 {
         bitAlto(ula.getN(), ula.getZ(), jam.substring(1, 2), jam.substring(2, 3), addr.substring(0, 1));
         // 			N, 			Z, 			JAMN, 				JAMZ, 				ADDR[0] (bit mais sig)
 
-        System.out.println("\n\n  ****Proxima instrucao: " + mpc.getValor());
+        System.out.println("****Proxima instrucao: " + mpc.getValor());
+        
+        printRegistradores();
 
         contadorCiclo++;
 
@@ -199,8 +204,8 @@ public class Mic1 {
 
     // Função que pega o valor do Barramento C e coloca no(s) Registrador(es) correspondente(s):
     private void carregarBarramentoC(String c) {
-        System.out.print("\n\nCarregando Registrador a partir da parte da Microinstrucao sobre o barramento C: ");
-        System.out.println(c + " -> valor armazenado no barramento C = " + barramentoC.getValor() + " (" + Long.parseLong(barramentoC.getValor(), 2) + ")");
+        System.out.print("|||Carregando Registrador a partir da parte da Microinstrucao sobre o barramento C: ");
+        System.out.println(c + " -> valor armazenado no barramento C = " + barramentoC.getValor() + " (" + Long.parseLong(barramentoC.getValor(), 2) + ") |||");
 
         if (c.substring(0, 1).equals("1")) {
             System.out.println("  **Registrador H selecionado");
@@ -256,21 +261,24 @@ public class Mic1 {
         read = mem.substring(1, 2);
         fetch = mem.substring(2, 3);
 
-        System.out.println("\n|OPERACOES DE MEMORIA|: write = " + write + " - read = " + read + " fetch = " + fetch + "\n");
+        System.out.println("||| OPERACOES DE MEMORIA |||: write = " + write + " - read = " + read + " fetch = " + fetch);
 
         if (write.equals("1")) {
-            System.out.println("  **WRITE: Escrevendo os 4 bytes (palavra) do MDR em 4 posicoes de memoria consecutivas a partir de memoriaPrincipal[" + (4 * mar.getValorLong()) + "]");
+            System.out.println("\t**WRITE: Escrevendo os 4 bytes (palavra) do MDR em 4 posicoes de memoria consecutivas a partir de memoriaPrincipal[" + (4 * mar.getValorLong()) + "]");
 
             // Anotando uma word na memoria principal:
             // Converter valor armazenado em byte:
-            System.out.println("  **Valor do MDR = " + mdr.getValor());
+            System.out.println("\t**Valor do MDR = " + mdr.getValor());
 
             int endereco = (int) mar.getValorLong();
-
-            System.out.println("Byte do MDR menos significativo para memoriaPrincipal[" + (4 * endereco) + "] = " + mdr.getValor().substring(24, 32) + " (" + setBinary(mdr.getValor().substring(24, 32)) + ")");
-            System.out.println("Segundo Byte do MDR menos significativo para memoriaPrincipal[" + (4 * endereco + 1) + "] = " + mdr.getValor().substring(16, 24) + " (" + setBinary(mdr.getValor().substring(16, 24)) + ")");
-            System.out.println("Byte do MDR menos significativo para memoriaPrincipal[" + (4 * endereco + 2) + "] = " + mdr.getValor().substring(8, 16) + " (" + setBinary(mdr.getValor().substring(8, 16)) + ")");
-            System.out.println("Byte do MDR menos significativo para memoriaPrincipal[" + (4 * endereco + 3) + "] = " + mdr.getValor().substring(0, 8) + " (" + setBinary(mdr.getValor().substring(0, 8)) + ")");
+            
+            System.out.println(mdr.getValor());
+            
+            //
+            System.out.println("\tByte do MDR menos significativo para memoriaPrincipal[" + (4*endereco) + "] = " + mdr.getValor().substring(24, 32) + " (" + setBinary(mdr.getValor().substring(24, 32)) + ")");
+            System.out.println("\tSegundo Byte do MDR menos significativo para memoriaPrincipal[" + (4 * endereco + 1) + "] = " + mdr.getValor().substring(16, 24) + " (" + setBinary(mdr.getValor().substring(16, 24)) + ")");
+            System.out.println("\tByte do MDR menos significativo para memoriaPrincipal[" + (4 * endereco + 2) + "] = " + mdr.getValor().substring(8, 16) + " (" + setBinary(mdr.getValor().substring(8, 16)) + ")");
+            System.out.println("\tByte do MDR menos significativo para memoriaPrincipal[" + (4 * endereco + 3) + "] = " + mdr.getValor().substring(0, 8) + " (" + setBinary(mdr.getValor().substring(0, 8)) + ")");
 
             this.memoriaPrincipal[4 * endereco] = setBinary(mdr.getValor().substring(24, 32)); //byte menos significativo; 
             this.memoriaPrincipal[4 * endereco + 1] = setBinary(mdr.getValor().substring(16, 24));
@@ -279,15 +287,15 @@ public class Mic1 {
         }
 
         if (read.equals("1")) {
-            System.out.println("  **READ: Lendo os 4 bytes (palavra) a partir de memoriaPrincipal[" + (4 * mar.getValorLong()) + "] e jogando no MDR");
+            System.out.println("\t**READ: Lendo os 4 bytes (palavra) a partir de memoriaPrincipal[" + (4 * mar.getValorLong()) + "] e jogando no MDR");
 
             int endereco = (int) mar.getValorLong();
 
-            System.out.println("  **Valor da palavra da memoria = " + memoriaPrincipal[4 * endereco + 3]
+            System.out.println("\t**Valor da palavra da memoria = " + memoriaPrincipal[4 * endereco + 3]
                     + "." + memoriaPrincipal[4 * endereco + 2] + "." + memoriaPrincipal[4 * endereco + 1] + "."
                     + memoriaPrincipal[4 * endereco]);
 
-            System.out.println("  ****Valor da palavra da memoria = " + getBinary(memoriaPrincipal[4 * endereco + 3])
+            System.out.println("\t**Valor da palavra da memoria = " + getBinary(memoriaPrincipal[4 * endereco + 3])
                     + "." + getBinary(memoriaPrincipal[4 * endereco + 2]) + "." + getBinary(memoriaPrincipal[4 * endereco + 1]) + "."
                     + getBinary(memoriaPrincipal[4 * endereco]));
 
@@ -302,7 +310,7 @@ public class Mic1 {
         }
 
         if (fetch.equals("1")) {
-            System.out.print("  **FETCH: Lendo 1 byte da memoriaPrincipal[" + pc.getValorLong() + "] = ");
+            System.out.print("\t**FETCH: Lendo 1 byte da memoriaPrincipal[" + pc.getValorLong() + "] = ");
             String valor = "";
 
             int endereco = (int) pc.getValorLong();
@@ -312,13 +320,13 @@ public class Mic1 {
             System.out.println(" e jogando no MBR");
             mbr.setValor(valor);
 
-            System.out.println("  **Valor setado agora no MBR= " + mbr.getValor());
+            System.out.println("\t**Valor setado agora no MBR= " + mbr.getValor());
         }
 
     }
 
     private void carregarProximaInstrucao(String jmpc, String addr) {
-        System.out.println("\n\n|PROXIMA INSTRUCAO NO MPC|: ");
+        System.out.println("||| PROXIMA INSTRUCAO NO MPC |||: ");
         if (jmpc.equals("1")) {
             // JMPC = 1, entao MPC = ADDR or MBR
             System.out.print("\tJMPC = 1 ->");
@@ -327,7 +335,7 @@ public class Mic1 {
 
             mpc.setValor(Long.parseLong(addr, 2) | Long.parseLong(mbr.getValor(), 2));
 
-            System.out.println("  **Valor MPC = " + mpc.getValor());
+            System.out.println("\t**Valor MPC = " + mpc.getValor());
 
         } else {
             // JMPC = 0, entao MPC = ADDR
@@ -344,7 +352,7 @@ public class Mic1 {
     }
 
     private void bitAlto(String n, String z, String jamn, String jamz, String addr) {
-        System.out.println("\n\n|Bit Alto|:\tN=" + n + " Z=" + z + " JAMN= " + jamn + " JAMZ= " + jamz + " ADDR[msb]= " + addr);
+        System.out.println("||| Bit Alto |||:\tN=" + n + " Z=" + z + " JAMN= " + jamn + " JAMZ= " + jamz + " ADDR[msb]= " + addr);
 
         boolean N = valor(n);
         boolean Z = valor(z);
@@ -413,6 +421,19 @@ public class Mic1 {
 
     }
 
+    private void printRegistradores() {
+          
+        System.out.println("MAR:\t" + mar.getValor() + " - " + mar.getValorLong());
+        System.out.println("MDR:\t" + mdr.getValor() + " - " + mdr.getValorLong());
+        System.out.println("PC:\t" + pc.getValor() + " - " + pc.getValorLong());
+        System.out.println("MBR:\t" + mbr.getValor32Bits() + " - " + mbr.getValorLong());
+        System.out.println("SP:\t" + sp.getValor() + " - " + sp.getValorLong());
+        System.out.println("LV:\t" + lv.getValor() + " - " + lv.getValorLong());
+        System.out.println("CPP:\t" + cpp.getValor() + " - " + cpp.getValorLong());
+        System.out.println("TOS:\t" + tos.getValor() + " - " + tos.getValorLong());
+        System.out.println("OPC:\t" + opc.getValor() + " - " + opc.getValorLong());
+        System.out.println("H:\t" + h.getValor() + " - " + h.getValorLong());
+    }
     
     private void printArmazenamentoControle(int index) {
         if (index >= 0 && index < 512) {
@@ -545,6 +566,82 @@ public class Mic1 {
             System.out.println("Erro: " + e);
         }
     }
+    
+     private void readExe2(String exe) {
+        try {
+            InputStream entrada;
+
+            if (exe == null) {
+                entrada = new FileInputStream(this.prog); //lendo o arquivo binário. Fluxo baseado em bytes;
+            } else {
+                entrada = new FileInputStream(exe);
+            }
+            
+            //Armazenará todo o arquivo .exe (há 62 bytes):
+            this.memoriaIntermediaria = new byte[62];
+                        
+            //Variáveis essenciais para a leitura byte a byte:
+            int intReaded = entrada.read();
+            int index = 0;
+            
+            //carregando o vetor de bytes intermediario com o .exe
+            while (intReaded != -1) {
+                //memoriaPrincipal[index] = (byte) intReaded;
+                this.memoriaIntermediaria[index] = (byte) intReaded;
+                index++;
+                intReaded = entrada.read();
+            }
+            
+            //inicializando os 20 primeiros bytes da memoria principal:
+            int i;
+            for(i=4; i<24; i++)
+                this.memoriaPrincipal[i-4] = this.memoriaIntermediaria[i];
+            
+            //pegando o valor de inicializacao do Stack Pointer:
+            String valor = "";
+            for(i=15; i>11; i--) {
+                valor = Integer.toHexString(memoriaPrincipal[i]) + valor;
+                System.out.print(Integer.toHexString(memoriaPrincipal[i]) + " ");
+            }
+            
+            System.out.print(" -> 0x" + valor); //Long.parseLong(valorInicializacaoSp, 16)
+            long inicioPrograma = Long.parseLong(valor, 16);
+            
+            System.out.println(" = " + inicioPrograma);
+            
+            valor = "";
+            for(i=3; i>=0; i--) {
+                valor = Integer.toHexString(memoriaIntermediaria[i]) + valor;
+                System.out.print(memoriaIntermediaria[i] + " ");
+            }
+            
+            System.out.print(" -> 0x" + valor);
+            long fecharPrograma = Long.parseLong(valor, 16);
+            
+            System.out.println(" = " + fecharPrograma);
+            
+            System.out.println("FECHAR NO (inicioPrograma+1+fecharPrograma-20): " + (inicioPrograma+1+fecharPrograma-20) );
+            
+            // Preenchendo a memoria principal a partir da posicao setada pelo SP:
+            int a = (int) inicioPrograma+1;
+            i = 24;
+            while(a<(inicioPrograma+1+fecharPrograma-20) && i<62) {
+                this.memoriaPrincipal[a] = this.memoriaIntermediaria[i];
+                a++;
+                i++;
+            }
+                 
+              
+                       
+            //long fecharPrograma = 
+            //for(i=(inicioPrograma+1); i<((inicioPrograma+1) +)
+            //intermediario[0] intermediario
+
+        } catch (Exception e) {
+            System.out.println("Erro: " + e);
+        }
+    }
+
 
     public static void main(String[] args) {
         Mic1 mic1;
@@ -557,23 +654,33 @@ public class Mic1 {
 
         //mic1.printArmazenamentoControle(0);
         mic1.printMemoriaPrincipal();
-
-        mic1.ciclo();
-        mic1.ciclo();
-        mic1.ciclo();
-        mic1.ciclo();
+        
+         Scanner sc = new Scanner(System.in);
+        int entrada = sc.nextInt();
+        
+        while(entrada!=1) {
+            mic1.ciclo();
+            entrada = sc.nextInt();
+                    
+        }
         
         /*
         mic1.ciclo();
         mic1.ciclo();
         mic1.ciclo();
         mic1.ciclo();
+        
+        
+        mic1.ciclo();
+        mic1.ciclo();
+        mic1.ciclo();
+ //       mic1.ciclo();
 
-        mic1.ciclo();
-        mic1.ciclo();
-        mic1.ciclo();
-        mic1.ciclo();
-        */
+ //       mic1.ciclo();
+ //       mic1.ciclo();
+ //       mic1.ciclo();
+        //mic1.ciclo();
+         */
 
     }
 

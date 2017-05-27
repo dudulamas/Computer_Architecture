@@ -9,7 +9,7 @@ public class Decode4x16 {
          */
 
         int i = Integer.parseInt(valor, 2); //transformando uma cadeia de 4 bits em sua representação decimal;
-        System.out.print("\n|DECODIFICADOR 4x16|: entrada -> " + valor + " = " + i);
+        System.out.print("|||DECODIFICADOR 4x16|||: entrada -> " + valor + " = " + i);
 
         if (i > 8) 
             return null;

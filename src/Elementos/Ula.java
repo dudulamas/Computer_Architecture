@@ -17,7 +17,7 @@ public class Ula {
     }
 
     public void executar(String instrucoes) {
-        System.out.println("\n\n| U L A |: Barramento A = " + barramentoA.getValor() + "\t- Barramento B = " + barramentoB.getValor() + "\t- CONTROLE ULA = " + instrucoes);
+        System.out.println("||| U L A |||: Barramento A = " + barramentoA.getValor() + "\t- Barramento B = " + barramentoB.getValor() + "\t- CONTROLE ULA = " + instrucoes);
         System.out.println("  **SLL8: " + instrucoes.substring(0, 1) + " SRA: " + instrucoes.substring(1, 2)
                 + " F0: " + instrucoes.substring(2, 3) + " F1: " + instrucoes.substring(3, 4)
                 + " ENA: " + instrucoes.substring(4, 5) + " ENB: " + instrucoes.substring(5, 6)

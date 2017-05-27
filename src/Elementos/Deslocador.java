@@ -12,7 +12,7 @@ public class Deslocador {
     }
 
     public void executar(String valorBarramentoI, String ssl8, String sra1) {
-        System.out.println("\n\n|DESLOCADOR|: Barramento I = " + valorBarramentoI + " - SSL8 = " + ssl8 + " - SRA1 = " + sra1);
+        System.out.println("||| DESLOCADOR |||: Barramento I = " + valorBarramentoI + " - SSL8 = " + ssl8 + " - SRA1 = " + sra1);
 
         String saidaDeslocador = valorBarramentoI;
 
@@ -33,6 +33,12 @@ public class Deslocador {
 
             System.out.println(" -> (apos SRA1)" + saidaDeslocador);
 
+        }
+        
+        int qtdZeros = 32 - saidaDeslocador.length();
+
+        for (int i = 0; i < qtdZeros; i++) {
+            saidaDeslocador = 0 + saidaDeslocador;
         }
 
         //Caso ambos sejam 11 ou 00 nao fazemos nada.
